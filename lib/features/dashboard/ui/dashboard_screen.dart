@@ -36,8 +36,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _onScroll() {
-    // kToolbarHeight ≈ 56 — hero is considered "collapsed" when we've
-    // scrolled far enough that only the toolbar remains visible.
     final collapsed =
         _scrollController.hasClients &&
             _scrollController.offset >
