@@ -8,6 +8,7 @@ import '../../transactions/logic/transaction_bloc.dart';
 import '../../transactions/ui/add_transaction_screen.dart';
 import '../../notifications/ui/notification_screen.dart';
 import '../../profile/ui/profile_screen.dart';
+import '../../../core/utils/formatters.dart';
 
 // ── FIX: StatefulWidget with ScrollController so we can detect
 //         when the SliverAppBar is collapsed vs expanded.
@@ -82,11 +83,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           };
           List<dynamic> transactions = [];
           Map<String, double> categoryData = {};
+          Map<String, String> categoryMap = {};
 
           if (state is DashboardDataLoaded) {
             summary = state.summary;
             transactions = state.transactions;
             categoryData = state.categoryData;
+            categoryMap = state.categoryMap;
           }
 
           return RefreshIndicator(
@@ -273,7 +276,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                 );
                               },
-                              child: _buildTransactionTile(tx),
+                              child: _buildTransactionTile(tx, categoryMap),
                             );
                           },
                         ),
@@ -347,140 +350,144 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           // Content — SafeArea keeps it below status bar
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
 
-                  // ── Top row: greeting + bell + avatar ───────────
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Greeting
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Good ${_greeting()}, 👋",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            userName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.4,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Bell + Avatar
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const NotificationScreen(),
+                    // ── Top row: greeting + bell + avatar ───────────
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Greeting
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Good ${_greeting()}, 👋",
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.notifications_none_rounded,
+                            const SizedBox(height: 2),
+                            Text(
+                              userName,
+                              style: const TextStyle(
                                 color: Colors.white,
-                                size: 22,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.4,
+                                height: 1.1,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          GestureDetector(
-                            onTap: () async {
-                              await Navigator.push(
+                          ],
+                        ),
+
+                        // Bell + Avatar
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const ProfileScreen(),
+                                  builder: (_) => const NotificationScreen(),
                                 ),
-                              );
-                              if (context.mounted) _refreshData(context);
-                            },
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundColor:
-                              Colors.white.withOpacity(0.2),
-                              backgroundImage: avatarUrl != null
-                                  ? NetworkImage(avatarUrl)
-                                  : null,
-                              child: avatarUrl == null
-                                  ? const Icon(Icons.person,
-                                  color: Colors.white, size: 22)
-                                  : null,
+                              ),
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.notifications_none_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ── Balance ──────────────────────────────────────
-                  Text(
-                    "Total Balance",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 13,
-                      letterSpacing: 0.4,
+                            const SizedBox(width: 10),
+                            GestureDetector(
+                              onTap: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ProfileScreen(),
+                                  ),
+                                );
+                                if (context.mounted) _refreshData(context);
+                              },
+                              child: CircleAvatar(
+                                radius: 20,
+                                backgroundColor:
+                                Colors.white.withOpacity(0.2),
+                                backgroundImage: avatarUrl != null
+                                    ? NetworkImage(avatarUrl)
+                                    : null,
+                                child: avatarUrl == null
+                                    ? const Icon(Icons.person,
+                                    color: Colors.white, size: 22)
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "\$${summary['total']?.toStringAsFixed(2) ?? '0.00'}",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: width * 0.1,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -1.5,
-                      height: 1.1,
+
+                    const SizedBox(height: 16),
+
+                    // ── Balance ──────────────────────────────────────
+                    Text(
+                      "Total Balance",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 13,
+                        letterSpacing: 0.4,
+                      ),
                     ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ── Income / Expense pills ───────────────────────
-                  Row(
-                    children: [
-                      _buildBalancePill(
-                        label: "Income",
-                        amount: summary['income'] ?? 0,
-                        icon: Icons.arrow_downward_rounded,
-                        iconBg: const Color(0xFF2D6A4F),
-                        iconColor: const Color(0xFF95D5B2),
+                    const SizedBox(height: 2),
+                    Text(
+                      CurrencyFormatter.format(summary['total'] ?? 0.0),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: width * 0.09,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -1.5,
+                        height: 1.1,
                       ),
-                      const SizedBox(width: 12),
-                      _buildBalancePill(
-                        label: "Expense",
-                        amount: summary['expense'] ?? 0,
-                        icon: Icons.arrow_upward_rounded,
-                        iconBg: const Color(0xFF6B2737),
-                        iconColor: const Color(0xFFFFB3C1),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ── Income / Expense pills ───────────────────────
+                    Row(
+                      children: [
+                        _buildBalancePill(
+                          label: "Income",
+                          amount: summary['income'] ?? 0,
+                          icon: Icons.arrow_downward_rounded,
+                          iconBg: const Color(0xFF2D6A4F),
+                          iconColor: const Color(0xFF95D5B2),
+                        ),
+                        const SizedBox(width: 12),
+                        _buildBalancePill(
+                          label: "Expense",
+                          amount: summary['expense'] ?? 0,
+                          icon: Icons.arrow_upward_rounded,
+                          iconBg: const Color(0xFF6B2737),
+                          iconColor: const Color(0xFFFFB3C1),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -529,7 +536,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  "\$${amount.toStringAsFixed(2)}",
+                  CurrencyFormatter.format(amount),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -556,7 +563,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         _buildStatCard(
           label: "Saved",
-          value: "\$${savings.abs().toStringAsFixed(0)}",
+          value: CurrencyFormatter.format(savings.abs(), decimalDigits: 0),
           sub: savings >= 0 ? "Great job!" : "Over budget",
           color: savings >= 0
               ? const Color(0xFF1B4332)
@@ -788,12 +795,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ── Transaction Tile ─────────────────────────────────────────────────
-  Widget _buildTransactionTile(dynamic tx) {
+  Widget _buildTransactionTile(dynamic tx, Map<String, String> categoryMap) {
     final bool isExpense = tx.type == 'expense';
     final Color tileColor =
     isExpense ? const Color(0xFFEF5350) : const Color(0xFF1B4332);
     final Color tileBg =
     isExpense ? const Color(0xFFFFEBEE) : const Color(0xFFEBF5EE);
+    final String displayName = tx.note.isNotEmpty
+        ? tx.note
+        : (categoryMap[tx.categoryId] ?? 'General');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -825,7 +835,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  tx.note.isEmpty ? tx.categoryId : tx.note,
+                  displayName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -854,7 +864,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                "${isExpense ? '-' : '+'}\$${tx.amount.toStringAsFixed(2)}",
+                "${isExpense ? '-' : '+'}${CurrencyFormatter.format(tx.amount)}",
                 style: TextStyle(
                   color: tileColor,
                   fontWeight: FontWeight.w800,

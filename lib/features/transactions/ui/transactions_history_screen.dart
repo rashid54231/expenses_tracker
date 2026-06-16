@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../logic/transaction_bloc.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/formatters.dart';
 
 class TransactionsHistoryScreen extends StatelessWidget {
   const TransactionsHistoryScreen({super.key});
@@ -17,6 +18,7 @@ class TransactionsHistoryScreen extends StatelessWidget {
           builder: (context, state) {
             if (state is DashboardDataLoaded) {
               final allTransactions = state.transactions;
+              final categoryMap = state.categoryMap;
               final expenses =
               allTransactions.where((t) => t.type == 'expense').toList();
               final incomes =
@@ -24,8 +26,8 @@ class TransactionsHistoryScreen extends StatelessWidget {
 
               return TabBarView(
                 children: [
-                  _buildTransactionList(context, expenses),
-                  _buildTransactionList(context, incomes),
+                  _buildTransactionList(context, expenses, categoryMap),
+                  _buildTransactionList(context, incomes, categoryMap),
                 ],
               );
             }
@@ -179,7 +181,7 @@ class TransactionsHistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTransactionList(BuildContext context, List<dynamic> list) {
+  Widget _buildTransactionList(BuildContext context, List<dynamic> list, Map<String, String> categoryMap) {
     if (list.isEmpty) {
       return Center(
         child: Column(
@@ -233,7 +235,7 @@ class TransactionsHistoryScreen extends StatelessWidget {
                 .read<TransactionCubit>()
                 .removeTransaction(tx.id.toString());
           },
-          child: _buildTransactionCard(context, tx, isExpense),
+          child: _buildTransactionCard(context, tx, isExpense, categoryMap),
         );
       },
     );
@@ -269,13 +271,16 @@ class TransactionsHistoryScreen extends StatelessWidget {
   }
 
   Widget _buildTransactionCard(
-      BuildContext context, dynamic tx, bool isExpense) {
+      BuildContext context, dynamic tx, bool isExpense, Map<String, String> categoryMap) {
     final Color accentColor =
     isExpense ? const Color(0xFFFF6B6B) : const Color(0xFF4CAF50);
     final Color bgColor =
     isExpense ? const Color(0xFFFFF0F0) : const Color(0xFFF0FFF4);
     final IconData iconData =
     isExpense ? Icons.remove_rounded : Icons.add_rounded;
+    final String displayName = tx.note.isNotEmpty
+        ? tx.note
+        : (categoryMap[tx.categoryId] ?? 'General');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -312,7 +317,7 @@ class TransactionsHistoryScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    tx.note.isEmpty ? tx.categoryId : tx.note,
+                    displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -346,7 +351,7 @@ class TransactionsHistoryScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  "${isExpense ? '-' : '+'}\$${tx.amount}",
+                  "${isExpense ? '-' : '+'}${CurrencyFormatter.format(tx.amount)}",
                   style: TextStyle(
                     color: accentColor,
                     fontSize: 16,

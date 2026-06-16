@@ -16,7 +16,15 @@ class TransactionRepository {
         .from('transactions')
         .select()
         .order('date', ascending: false)
-        .limit(5);
+        .limit(10);
+    return (response as List).map((json) => TransactionModel.fromJson(json)).toList();
+  }
+
+  Future<List<TransactionModel>> getAllTransactions() async {
+    final response = await _supabase
+        .from('transactions')
+        .select()
+        .order('date', ascending: false);
     return (response as List).map((json) => TransactionModel.fromJson(json)).toList();
   }
 
@@ -31,14 +39,48 @@ class TransactionRepository {
   }
 
   Future<Map<String, double>> getCategoryData() async {
-    final response = await _supabase.from('transactions').select('amount, category_id').eq('type', 'expense');
+    final user = _supabase.auth.currentUser;
+    if (user == null) return {};
+
+    final categories = await _supabase
+        .from('categories')
+        .select('id, name')
+        .eq('user_id', user.id);
+
+    final catMap = <String, String>{};
+    for (var c in categories) {
+      catMap[c['id']] = c['name'] ?? 'General';
+    }
+
+    final response = await _supabase
+        .from('transactions')
+        .select('amount, category_id')
+        .eq('type', 'expense');
+
     Map<String, double> totals = {};
     for (var item in response) {
-      String cat = item['category_id'] ?? 'General';
+      String catId = item['category_id'] ?? '';
+      String catName = catMap[catId] ?? 'General';
       double amt = double.tryParse(item['amount'].toString()) ?? 0.0;
-      totals[cat] = (totals[cat] ?? 0) + amt;
+      totals[catName] = (totals[catName] ?? 0) + amt;
     }
     return totals;
+  }
+
+  Future<Map<String, String>> getCategoryMap() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return {};
+
+    final categories = await _supabase
+        .from('categories')
+        .select('id, name')
+        .eq('user_id', user.id);
+
+    final catMap = <String, String>{};
+    for (var c in categories) {
+      catMap[c['id']] = c['name'] ?? 'General';
+    }
+    return catMap;
   }
 
   Future<void> addTransaction({required double amount, required String categoryId, required String type, String? note}) async {

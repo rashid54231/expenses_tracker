@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/formatters.dart';
 
 class SetBudgetScreen extends StatefulWidget {
   const SetBudgetScreen({super.key});
@@ -133,9 +134,9 @@ class _SetBudgetScreenState extends State<SetBudgetScreen> {
 
             const SizedBox(height: 30),
 
-            const Text(
-              "Budget Limit (\$)",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+            Text(
+              "Budget Limit (${CurrencyFormatter.currencySymbol})",
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
             ),
             const SizedBox(height: 10),
 

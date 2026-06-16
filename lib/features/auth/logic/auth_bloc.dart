@@ -10,6 +10,8 @@ class AuthSuccess extends AuthState {}
 class AuthAuthenticated extends AuthState { final User user; AuthAuthenticated(this.user); }
 class AuthUnauthenticated extends AuthState {}
 class AuthFailure extends AuthState { final String error; AuthFailure(this.error); }
+class AuthResetPasswordSuccess extends AuthState { final String message; AuthResetPasswordSuccess(this.message); }
+class AuthResetPasswordVerifySuccess extends AuthState { final String message; AuthResetPasswordVerifySuccess(this.message); }
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepository _repository;
@@ -86,6 +88,34 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthUnauthenticated());
     } catch (e) {
       print("DEBUG ERROR (Logout): ${e.toString()}");
+    }
+  }
+
+  // 5. Send Password Reset Email with Logs
+  Future<void> sendPasswordResetEmail(String email) async {
+    print("DEBUG: Requesting password reset email for: $email");
+    emit(AuthLoading());
+    try {
+      await _repository.resetPassword(email);
+      print("DEBUG: Password reset email sent successfully.");
+      emit(AuthResetPasswordSuccess("OTP code has been sent to your email."));
+    } catch (e) {
+      print("DEBUG ERROR (Reset Password): ${e.toString()}");
+      emit(AuthFailure(e.toString()));
+    }
+  }
+
+  // 6. Verify OTP and Update Password with Logs
+  Future<void> verifyOTPAndResetPassword(String email, String token, String newPassword) async {
+    print("DEBUG: Verifying OTP and updating password for: $email");
+    emit(AuthLoading());
+    try {
+      await _repository.verifyOTPAndResetPassword(email, token, newPassword);
+      print("DEBUG: Password updated successfully.");
+      emit(AuthResetPasswordVerifySuccess("Password updated successfully. Please login with your new password."));
+    } catch (e) {
+      print("DEBUG ERROR (Verify OTP & Reset Password): ${e.toString()}");
+      emit(AuthFailure(e.toString()));
     }
   }
 }

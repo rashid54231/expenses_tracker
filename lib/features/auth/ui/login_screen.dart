@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../logic/auth_bloc.dart';
 import '../data/auth_repository.dart';
 import 'signup_screen.dart';
+import 'forgot_password_screen.dart';
 import '../../dashboard/ui/home_wrapper.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -186,7 +187,35 @@ class LoginScreen extends StatelessWidget {
                                 obscureText: true,
                               ),
 
-                              const SizedBox(height: 36),
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const ForgotPasswordScreen(),
+                                      ),
+                                    );
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(50, 30),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: const Text(
+                                    "Forgot Password?",
+                                    style: TextStyle(
+                                      color: Color(0xFF00C6FF),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 28),
 
                               // Login button
                               state is AuthLoading

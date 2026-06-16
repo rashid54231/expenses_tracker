@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../logic/transaction_bloc.dart';
 import '../../categories/data/category_model.dart';
 import '../../categories/presentation/pages/category_list_screen.dart';
+import '../../../core/utils/formatters.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -277,7 +278,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
           prefixIcon: Padding(
             padding: const EdgeInsets.only(right: 10, top: 14),
             child: Text(
-              "\$",
+              CurrencyFormatter.currencySymbol,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,

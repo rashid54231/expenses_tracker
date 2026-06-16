@@ -12,7 +12,8 @@ class DashboardDataLoaded extends TransactionState {
   final List<dynamic> transactions;
   final Map<String, double> summary;
   final Map<String, double> categoryData;
-  DashboardDataLoaded(this.transactions, this.summary, this.categoryData);
+  final Map<String, String> categoryMap;
+  DashboardDataLoaded(this.transactions, this.summary, this.categoryData, this.categoryMap);
 }
 
 // YEH STATE MISSING THI:
@@ -39,7 +40,8 @@ class TransactionCubit extends Cubit<TransactionState> {
       final transactions = await repository.getTransactions();
       final summary = await repository.getTransactionSummary();
       final categoryData = await repository.getCategoryData();
-      emit(DashboardDataLoaded(transactions, summary, categoryData));
+      final categoryMap = await repository.getCategoryMap();
+      emit(DashboardDataLoaded(transactions, summary, categoryData, categoryMap));
     } catch (e) {
       emit(TransactionError("Data load nahi ho saka: $e"));
     }

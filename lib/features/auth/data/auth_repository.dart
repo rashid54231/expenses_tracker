@@ -50,4 +50,37 @@ class AuthRepository {
 
   // 5. SESSION STREAM (App ko real-time batana ke user login hai ya nahi)
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
+
+  // 6. RESET PASSWORD (Password reset email bhejna using OTP)
+  Future<void> resetPassword(String email) async {
+    try {
+      await _client.auth.signInWithOtp(
+        email: email,
+        shouldCreateUser: false,
+      );
+    } on AuthException catch (e) {
+      throw e.message;
+    } catch (e) {
+      throw "An unexpected error occurred. Please try again.";
+    }
+  }
+
+  // 7. VERIFY OTP AND RESET PASSWORD
+  Future<void> verifyOTPAndResetPassword(String email, String token, String newPassword) async {
+    try {
+      await _client.auth.verifyOTP(
+        email: email,
+        token: token,
+        type: OtpType.email,
+      );
+      await _client.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+      await _client.auth.signOut();
+    } on AuthException catch (e) {
+      throw e.message;
+    } catch (e) {
+      throw "An unexpected error occurred. Please try again.";
+    }
+  }
 }

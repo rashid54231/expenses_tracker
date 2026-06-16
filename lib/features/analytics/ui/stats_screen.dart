@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../logic/analytics_provider.dart';
+import '../../../core/utils/formatters.dart';
 
 class StatsScreen extends StatelessWidget {
   const StatsScreen({super.key});
@@ -241,7 +242,7 @@ class StatsScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "\$${total.toStringAsFixed(2)}",
+                                    CurrencyFormatter.format(total),
                                     style: const TextStyle(
                                       color: Color(0xFF1A1A2E),
                                       fontSize: 20,
@@ -589,7 +590,7 @@ class StatsScreen extends StatelessWidget {
                                       const SizedBox(width: 8),
                                       // Amount
                                       Text(
-                                        "\$${e.value.toStringAsFixed(2)}",
+                                        CurrencyFormatter.format(e.value),
                                         style: TextStyle(
                                           fontWeight: FontWeight.w800,
                                           fontSize: 17,
