@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; // Bloc import kiya
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/network/supabase_config.dart';
 import 'core/services/notification_service.dart';
 import 'features/auth/ui/login_screen.dart';
-import 'features/transactions/logic/transaction_bloc.dart'; // Cubit path
-import 'features/transactions/data/transaction_repository.dart'; // Repo path
+import 'features/transactions/logic/transaction_bloc.dart';
+import 'features/transactions/data/transaction_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseConfig.init();
-  await NotificationService().initNotification();
+  await NotificationService().init();
 
   runApp(
-    // Global Provider: Ab poori app mein data sync rahega
     MultiBlocProvider(
       providers: [
         BlocProvider(

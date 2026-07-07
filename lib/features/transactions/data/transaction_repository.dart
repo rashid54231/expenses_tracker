@@ -96,7 +96,10 @@ class TransactionRepository {
       'date': DateTime.now().toIso8601String(),
     });
 
-    if (type == 'expense') await _checkBudgetAlerts(user.id, categoryId);
+    if (type == 'expense') {
+      await _checkBudgetAlerts(user.id, categoryId);
+      await _notificationService.checkIncomeExpenseAlert();
+    }
   }
 
   Future<void> deleteTransaction(String id) async {
@@ -159,19 +162,36 @@ class TransactionRepository {
   Future<void> _checkBudgetAlerts(String userId, String categoryId) async {
     try {
       final currentMonth = DateFormat('yyyy-MM').format(DateTime.now());
-      final budgetRes = await _supabase.from('budgets').select('limit_amount').eq('user_id', userId).eq('category_id', categoryId).eq('month', currentMonth).maybeSingle();
+      final budgetRes = await _supabase.from('budgets').select('monthly_limit').eq('user_id', userId).eq('category_id', categoryId).eq('month', currentMonth).maybeSingle();
       if (budgetRes == null) return;
 
-      double limit = double.tryParse(budgetRes['limit_amount'].toString()) ?? 0.0;
+      double limit = double.tryParse(budgetRes['monthly_limit'].toString()) ?? 0.0;
+      if (limit <= 0) return;
+
       final expenseRes = await _supabase.from('transactions').select('amount').eq('user_id', userId).eq('category_id', categoryId).eq('type', 'expense').gte('date', DateTime(DateTime.now().year, DateTime.now().month, 1).toIso8601String());
 
       double total = 0;
       for (var item in expenseRes) total += double.tryParse(item['amount'].toString()) ?? 0.0;
 
-      if (total >= limit) {
-        await _notificationService.showNotification(title: "🚨 Budget Full!", body: "Limit khatam!");
-      } else if (total >= (limit * 0.8)) {
-        await _notificationService.showNotification(title: "⚠️ 80% Used", body: "Budget khatam hone wala hai.");
+      final categories = await _supabase.from('categories').select('name').eq('id', categoryId).maybeSingle();
+      String catName = categories?['name'] ?? 'this category';
+
+      double percent = (total / limit) * 100;
+
+      if (percent >= 100) {
+        if (await _notificationService.hasRecentAlert('budget_exceeded_$categoryId')) return;
+        await _notificationService.sendAlert(
+          title: "🚨 Budget Exceeded!",
+          body: "You've spent Rs.${total.toStringAsFixed(0)} on $catName. Monthly limit of Rs.${limit.toStringAsFixed(0)} is exceeded!",
+          type: 'budget_exceeded_$categoryId',
+        );
+      } else if (percent >= 80) {
+        if (await _notificationService.hasRecentAlert('budget_warning_$categoryId')) return;
+        await _notificationService.sendAlert(
+          title: "⚠️ Budget Warning",
+          body: "You've used ${percent.toInt()}% of your $catName budget (Rs.${total.toStringAsFixed(0)} of Rs.${limit.toStringAsFixed(0)}).",
+          type: 'budget_warning_$categoryId',
+        );
       }
     } catch (e) { print(e); }
   }
