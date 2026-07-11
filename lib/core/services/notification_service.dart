@@ -123,21 +123,23 @@ class NotificationService {
 
     double ratio = (totalExpense / totalIncome) * 100;
     int percent = ratio.toInt();
+    int remaining = 100 - percent;
+    double leftAmount = totalIncome - totalExpense;
 
     if (percent >= 100) {
       if (await hasRecentAlert('income_expense_critical')) return;
 
       await sendAlert(
-        title: "🚨 Spending Exceeded Income!",
-        body: "You've spent Rs.${totalExpense.toStringAsFixed(0)} which is $percent% of your Rs.${totalIncome.toStringAsFixed(0)} income this month.",
+        title: "🚨 Income Exhausted!",
+        body: "You've spent Rs.${totalExpense.toStringAsFixed(0)} which is $percent% of your Rs.${totalIncome.toStringAsFixed(0)} income. You've gone over budget by Rs.${(totalExpense - totalIncome).toStringAsFixed(0)}!",
         type: 'income_expense_critical',
       );
     } else if (percent >= 80) {
       if (await hasRecentAlert('income_expense_warning')) return;
 
       await sendAlert(
-        title: "⚠️ Spending Alert",
-        body: "You've used $percent% of your income this month (Rs.${totalExpense.toStringAsFixed(0)} of Rs.${totalIncome.toStringAsFixed(0)}).",
+        title: "⚠️ Spending Alert - ${percent}% Used",
+        body: "You've spent Rs.${totalExpense.toStringAsFixed(0)} out of Rs.${totalIncome.toStringAsFixed(0)} income. Only Rs.${leftAmount.toStringAsFixed(0)} left ($remaining% remaining). Spend wisely!",
         type: 'income_expense_warning',
       );
     }
