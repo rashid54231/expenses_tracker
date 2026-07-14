@@ -83,6 +83,7 @@ class TransactionCubit extends Cubit<TransactionState> {
   Future<void> addNewTransaction({
     required double amount,
     required String categoryId,
+    required String walletId,
     required String type,
     String? note
   }) async {
@@ -91,6 +92,7 @@ class TransactionCubit extends Cubit<TransactionState> {
       await repository.addTransaction(
           amount: amount,
           categoryId: categoryId,
+          walletId: walletId,
           type: type,
           note: note
       );

@@ -278,6 +278,7 @@ class _SignupScreenState extends State<SignupScreen>
                                       fontFamily: 'Georgia',
                                     ),
                                     decoration: InputDecoration(
+                                      filled: false,
                                       hintText: "you@example.com",
                                       hintStyle: TextStyle(
                                         color: _textSecondary.withOpacity(0.6),
@@ -333,6 +334,7 @@ class _SignupScreenState extends State<SignupScreen>
                                       letterSpacing: 1.5,
                                     ),
                                     decoration: InputDecoration(
+                                      filled: false,
                                       hintText: "Min. 8 characters",
                                       hintStyle: TextStyle(
                                         color: _textSecondary.withOpacity(0.6),

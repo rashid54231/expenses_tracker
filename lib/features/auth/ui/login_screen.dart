@@ -481,6 +481,7 @@ class _GlassTextFieldState extends State<_GlassTextField> {
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
+            filled: false,
             hintText: widget.hint,
             hintStyle: TextStyle(
               color: Colors.white.withOpacity(0.25),

@@ -3,6 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../logic/transaction_bloc.dart';
 import '../../categories/data/category_model.dart';
 import '../../categories/presentation/pages/category_list_screen.dart';
+import '../../wallets/data/wallet_model.dart';
+import '../../wallets/logic/wallet_cubit.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/utils/formatters.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -19,8 +23,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
 
   String _type = 'expense';
   CategoryModel? _selectedCategory;
+  WalletModel? _selectedWallet;
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
+  String? _receiptImagePath;
 
   // Design constants
   static const Color _navy = Color(0xFF1A1A2E);
@@ -36,6 +42,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
   void initState() {
     super.initState();
     context.read<TransactionCubit>().fetchUserCategories();
+    context.read<WalletCubit>().loadWallets();
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -97,7 +104,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                           const SizedBox(height: 16),
                           _buildCategoryDropdown(state),
                           const SizedBox(height: 16),
+                          _buildWalletDropdown(),
+                          const SizedBox(height: 16),
                           _buildNoteField(),
+                          const SizedBox(height: 16),
+                          _buildReceiptPicker(),
                           const SizedBox(height: 28),
                           _buildSaveButton(state),
                         ],
@@ -362,6 +373,79 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     );
   }
 
+  Widget _buildWalletDropdown() {
+    return BlocBuilder<WalletCubit, WalletState>(
+      builder: (context, state) {
+        List<WalletModel> walletsList = [];
+        if (state is WalletLoaded) {
+          walletsList = state.wallets;
+          // Auto-select first wallet if none is selected
+          if (_selectedWallet == null && walletsList.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              setState(() => _selectedWallet = walletsList.first);
+            });
+          }
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            color: _cardWhite,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: _navy.withOpacity(0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+          child: DropdownButtonFormField<WalletModel>(
+            value: _selectedWallet,
+            isExpanded: true,
+            icon: const Icon(Icons.account_balance_wallet_rounded, color: _subtleText),
+            dropdownColor: _cardWhite,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              labelText: "Wallet",
+              labelStyle: TextStyle(
+                  color: _subtleText, fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+            style: const TextStyle(
+              color: _darkText,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+            items: walletsList.map((wallet) {
+              return DropdownMenuItem<WalletModel>(
+                value: wallet,
+                child: Text(wallet.name),
+              );
+            }).toList(),
+            onChanged: (newValue) {
+              setState(() {
+                _selectedWallet = newValue;
+              });
+            },
+            hint: state is WalletLoading
+                ? const Row(
+                    children: [
+                      SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: _subtleText),
+                      ),
+                      SizedBox(width: 10),
+                      Text("Loading wallets...", style: TextStyle(color: _subtleText, fontSize: 14)),
+                    ],
+                  )
+                : const Text("Choose a wallet", style: TextStyle(color: _subtleText, fontSize: 14)),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildNoteField() {
     return Container(
       decoration: BoxDecoration(
@@ -402,6 +486,58 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     );
   }
 
+  Widget _buildReceiptPicker() {
+    return GestureDetector(
+      onTap: () async {
+        final picker = ImagePicker();
+        final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+        if (pickedFile != null) {
+          setState(() {
+            _receiptImagePath = pickedFile.path;
+          });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+        decoration: BoxDecoration(
+          color: _receiptImagePath == null ? _cardWhite : _accentColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _receiptImagePath == null ? Colors.transparent : _accentColor, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: _navy.withOpacity(0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _receiptImagePath == null ? Icons.camera_alt_outlined : Icons.check_circle_rounded,
+              color: _receiptImagePath == null ? _subtleText : _accentColor,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _receiptImagePath == null ? "Attach Receipt Image" : "Receipt Attached",
+                style: TextStyle(
+                  color: _receiptImagePath == null ? _subtleText : _accentColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (_receiptImagePath != null)
+              GestureDetector(
+                onTap: () => setState(() => _receiptImagePath = null),
+                child: const Icon(Icons.close_rounded, color: Colors.grey, size: 20),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSaveButton(TransactionState state) {
     if (state is TransactionLoading) {
       return Center(
@@ -430,11 +566,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
               _styledSnack("Please select a category", isError: true));
           return;
         }
+        if (_selectedWallet == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              _styledSnack("Please select a wallet", isError: true));
+          return;
+        }
+        String finalNote = _noteController.text.trim();
+        if (_receiptImagePath != null) {
+          finalNote += "\n[Receipt: $_receiptImagePath]";
+        }
+
         context.read<TransactionCubit>().addNewTransaction(
           amount: double.parse(amountStr),
           categoryId: _selectedCategory!.id,
+          walletId: _selectedWallet!.id,
           type: _type,
-          note: _noteController.text.trim(),
+          note: finalNote.trim(),
         );
       },
       child: AnimatedContainer(

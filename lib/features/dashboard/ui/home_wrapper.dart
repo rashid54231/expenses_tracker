@@ -3,6 +3,7 @@ import 'dashboard_screen.dart';
 import '../../analytics/ui/stats_screen.dart';
 import '../../budgets/ui/set_budget_screen.dart';
 import '../../transactions/ui/transactions_history_screen.dart';
+import '../../wallets/ui/wallet_list_screen.dart';
 
 class HomeWrapper extends StatefulWidget {
   const HomeWrapper({super.key});
@@ -17,6 +18,7 @@ class _HomeWrapperState extends State<HomeWrapper> {
   // Updated List with 4 screens (No changes here)
   final List<Widget> _screens = [
     const DashboardScreen(),
+    const WalletListScreen(),
     const TransactionsHistoryScreen(),
     const SetBudgetScreen(),
     const StatsScreen(),
@@ -51,8 +53,9 @@ class _HomeWrapperState extends State<HomeWrapper> {
           unselectedItemColor: Colors.grey,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: "Home"),
+            BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_rounded), label: "Wallets"),
             BottomNavigationBarItem(icon: Icon(Icons.history_rounded), label: "History"),
-            BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_rounded), label: "Budget"),
+            BottomNavigationBarItem(icon: Icon(Icons.money_off_rounded), label: "Budget"),
             BottomNavigationBarItem(icon: Icon(Icons.pie_chart_rounded), label: "Stats"),
           ],
         ),

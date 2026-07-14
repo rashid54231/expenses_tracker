@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../logic/analytics_provider.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/services/export_service.dart';
+import '../../transactions/data/transaction_repository.dart';
 
 class StatsScreen extends StatelessWidget {
   const StatsScreen({super.key});
@@ -176,18 +178,47 @@ class StatsScreen extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.search_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.search_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: PopupMenuButton<String>(
+                                    icon: const Icon(Icons.download_rounded, color: Colors.white, size: 20),
+                                    padding: EdgeInsets.zero,
+                                    onSelected: (value) async {
+                                      final exportService = ExportService(TransactionRepository());
+                                      if (value == 'pdf') {
+                                        await exportService.exportToPDF();
+                                      } else if (value == 'csv') {
+                                        await exportService.exportToCSV();
+                                      }
+                                    },
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(value: 'pdf', child: Text('Export as PDF')),
+                                      const PopupMenuItem(value: 'csv', child: Text('Export as CSV')),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

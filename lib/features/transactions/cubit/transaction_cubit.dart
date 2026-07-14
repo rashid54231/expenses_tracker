@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 // Path check kar lein: Agar file 'data' folder mein hai toh ye sahi hai
 import '../data/transaction_repository.dart';
-import '../../../models/transaction_model.dart';
+
 
 // --- STATES ---
 abstract class TransactionState {}
@@ -62,6 +62,7 @@ class TransactionCubit extends Cubit<TransactionState> {
   Future<void> addNewTransaction({
     required double amount,
     required String categoryId,
+    required String walletId,
     required String type,
     String? note
   }) async {
@@ -71,6 +72,7 @@ class TransactionCubit extends Cubit<TransactionState> {
       await repository.addTransaction(
           amount: amount,
           categoryId: categoryId,
+          walletId: walletId,
           type: type,
           note: note
       );

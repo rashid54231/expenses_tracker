@@ -8,6 +8,8 @@ import '../../transactions/logic/transaction_bloc.dart';
 import '../../transactions/ui/add_transaction_screen.dart';
 import '../../notifications/ui/notification_screen.dart';
 import '../../profile/ui/profile_screen.dart';
+import '../../savings/ui/savings_screen.dart';
+import '../../debts/ui/debts_screen.dart';
 import '../../../core/utils/formatters.dart';
 
 // ── FIX: StatefulWidget with ScrollController so we can detect
@@ -68,6 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
+      drawer: _buildDrawer(context, userName, avatarUrl),
       body: BlocBuilder<TransactionCubit, TransactionState>(
         builder: (context, state) {
           if (state is TransactionLoading) {
@@ -105,7 +108,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   expandedHeight: _expandedHeight,
                   pinned: true,
                   backgroundColor: const Color(0xFF1B4332),
-                  automaticallyImplyLeading: false,
+                  automaticallyImplyLeading: true,
+                  iconTheme: const IconThemeData(color: Colors.white),
                   elevation: 0,
 
                   // ── FIX: title is TRANSPARENT when expanded so it
@@ -291,6 +295,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context, String userName, String? avatarUrl) {
+    return Drawer(
+      child: Container(
+        color: const Color(0xFFF4F6FB),
+        child: Column(
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(
+                color: Color(0xFF1B4332),
+              ),
+              accountName: Text(userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              accountEmail: const Text("Advanced Features"),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white24,
+                backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                child: avatarUrl == null ? const Icon(Icons.person, color: Colors.white, size: 30) : null,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.track_changes_rounded, color: Color(0xFF6C63FF)),
+              title: const Text("Savings Goals", style: TextStyle(fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const SavingsScreen()));
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.handshake_rounded, color: Colors.orange),
+              title: const Text("Debts & Loans", style: TextStyle(fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const DebtsScreen()));
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
