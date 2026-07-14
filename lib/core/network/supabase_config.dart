@@ -10,3 +10,4 @@ class SupabaseConfig {
 
   static final client = Supabase.instance.client;
 }
+//
