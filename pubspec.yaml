@@ -37,6 +37,10 @@ dependencies:
 
   # Image Picking (Nayi cheez jo add ki hai)
   image_picker: ^1.0.7
+  google_mlkit_text_recognition: ^0.13.0
+
+  # Security
+  local_auth: ^2.2.0
 
   # Notifications (Local & Push)
   flutter_local_notifications: ^17.0.0

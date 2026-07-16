@@ -37,12 +37,14 @@ class NotificationService {
     int? id,
   }) async {
     const androidDetails = AndroidNotificationDetails(
-      'expense_tracker_alerts',
+      'expense_tracker_alerts_high_priority',
       'Expense Tracker Alerts',
       channelDescription: 'Budget and spending alerts',
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
+      enableVibration: true,
+      visibility: NotificationVisibility.public,
       icon: '@mipmap/ic_launcher',
     );
 
@@ -138,8 +140,8 @@ class NotificationService {
       if (await hasRecentAlert('income_expense_warning')) return;
 
       await sendAlert(
-        title: "⚠️ Spending Alert - ${percent}% Used",
-        body: "You've spent Rs.${totalExpense.toStringAsFixed(0)} out of Rs.${totalIncome.toStringAsFixed(0)} income. Only Rs.${leftAmount.toStringAsFixed(0)} left ($remaining% remaining). Spend wisely!",
+        title: "⚠️ Low Savings - Only $remaining% Left",
+        body: "Your save rate has dropped to $remaining%. You have Rs.${leftAmount.toStringAsFixed(0)} remaining from your Rs.${totalIncome.toStringAsFixed(0)} income. Please spend wisely!",
         type: 'income_expense_warning',
       );
     }

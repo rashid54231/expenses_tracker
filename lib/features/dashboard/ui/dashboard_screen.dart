@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../transactions/logic/transaction_bloc.dart';
 import '../../transactions/ui/add_transaction_screen.dart';
@@ -30,12 +31,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   late ScrollController _scrollController;
   bool _isCollapsed = false;
+  bool _isPrivacyMode = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    _loadPrivacyMode();
+  }
+
+  Future<void> _loadPrivacyMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isPrivacyMode = prefs.getBool('privacy_mode') ?? false;
+    });
+  }
+
+  Future<void> _togglePrivacyMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isPrivacyMode = !_isPrivacyMode;
+    });
+    await prefs.setBool('privacy_mode', _isPrivacyMode);
   }
 
   void _onScroll() {
@@ -133,6 +151,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   //         bell/avatar don't double up with the hero's
                   //         own bell/avatar row.
                   actions: [
+                    AnimatedOpacity(
+                      duration: const Duration(milliseconds: 200),
+                      opacity: _isCollapsed ? 1.0 : 0.0,
+                      child: IconButton(
+                        icon: Icon(
+                          _isPrivacyMode ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                        onPressed: _isCollapsed ? _togglePrivacyMode : null,
+                      ),
+                    ),
                     AnimatedOpacity(
                       duration: const Duration(milliseconds: 200),
                       opacity: _isCollapsed ? 1.0 : 0.0,
@@ -441,6 +471,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Row(
                           children: [
                             GestureDetector(
+                              onTap: _togglePrivacyMode,
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  _isPrivacyMode ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            GestureDetector(
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -503,7 +550,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      CurrencyFormatter.format(summary['total'] ?? 0.0),
+                      _isPrivacyMode ? '***' : CurrencyFormatter.format(summary['total'] ?? 0.0),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -526,6 +573,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           icon: Icons.arrow_downward_rounded,
                           iconBg: const Color(0xFF2D6A4F),
                           iconColor: const Color(0xFF95D5B2),
+                          isPrivacyMode: _isPrivacyMode,
                         ),
                         const SizedBox(width: 12),
                         _buildBalancePill(
@@ -534,6 +582,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           icon: Icons.arrow_upward_rounded,
                           iconBg: const Color(0xFF6B2737),
                           iconColor: const Color(0xFFFFB3C1),
+                          isPrivacyMode: _isPrivacyMode,
                         ),
                       ],
                     ),
@@ -553,6 +602,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required IconData icon,
     required Color iconBg,
     required Color iconColor,
+    required bool isPrivacyMode,
   }) {
     return Expanded(
       child: Container(
@@ -590,7 +640,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      CurrencyFormatter.format(amount, decimalDigits: 0),
+                      isPrivacyMode ? '***' : CurrencyFormatter.format(amount, decimalDigits: 0),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
@@ -619,7 +669,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         _buildStatCard(
           label: "Saved",
-          value: CurrencyFormatter.format(savings.abs(), decimalDigits: 0),
+          value: _isPrivacyMode ? '***' : CurrencyFormatter.format(savings.abs(), decimalDigits: 0),
           sub: savings >= 0 ? "Great job!" : "Over budget",
           color: savings >= 0
               ? const Color(0xFF1B4332)
@@ -927,7 +977,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                "${isExpense ? '-' : '+'}${CurrencyFormatter.format(tx.amount)}",
+                _isPrivacyMode ? '***' : "${isExpense ? '-' : '+'}${CurrencyFormatter.format(tx.amount)}",
                 style: TextStyle(
                   color: tileColor,
                   fontWeight: FontWeight.w800,

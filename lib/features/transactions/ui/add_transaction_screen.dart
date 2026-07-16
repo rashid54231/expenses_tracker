@@ -7,6 +7,7 @@ import '../../wallets/data/wallet_model.dart';
 import '../../wallets/logic/wallet_cubit.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../../../core/utils/formatters.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -22,6 +23,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
   final _noteController = TextEditingController();
 
   String _type = 'expense';
+  String _recurrence = 'none';
   CategoryModel? _selectedCategory;
   WalletModel? _selectedWallet;
   late AnimationController _animController;
@@ -105,6 +107,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                           _buildCategoryDropdown(state),
                           const SizedBox(height: 16),
                           _buildWalletDropdown(),
+                          const SizedBox(height: 16),
+                          _buildRecurrenceDropdown(),
                           const SizedBox(height: 16),
                           _buildNoteField(),
                           const SizedBox(height: 16),
@@ -486,17 +490,102 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     );
   }
 
+  Widget _buildRecurrenceDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: _cardWhite,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: _navy.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+      child: DropdownButtonFormField<String>(
+        value: _recurrence,
+        isExpanded: true,
+        icon: const Icon(Icons.repeat_rounded, color: _subtleText),
+        dropdownColor: _cardWhite,
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          labelText: "Recurrence (Subscription)",
+          labelStyle: TextStyle(
+              color: _subtleText, fontSize: 13, fontWeight: FontWeight.w500),
+        ),
+        style: const TextStyle(
+          color: _darkText,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+        items: const [
+          DropdownMenuItem(value: 'none', child: Text("Does not repeat")),
+          DropdownMenuItem(value: 'daily', child: Text("Daily")),
+          DropdownMenuItem(value: 'weekly', child: Text("Weekly")),
+          DropdownMenuItem(value: 'monthly', child: Text("Monthly")),
+        ],
+        onChanged: (newValue) {
+          if (newValue != null) {
+            setState(() => _recurrence = newValue);
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _scanReceipt() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _receiptImagePath = pickedFile.path;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+          _styledSnack("Scanning receipt...", isError: false));
+
+      try {
+        final inputImage = InputImage.fromFilePath(pickedFile.path);
+        final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+        final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+        
+        // Basic regex to find amounts like 12.99 or $45.00
+        final amountRegExp = RegExp(r'\$?\d+(\.\d{2})?');
+        double maxAmount = 0.0;
+        for (TextBlock block in recognizedText.blocks) {
+          for (TextLine line in block.lines) {
+            final matches = amountRegExp.allMatches(line.text);
+            for (var match in matches) {
+              String valStr = match.group(0)!.replaceAll('\$', '');
+              double val = double.tryParse(valStr) ?? 0.0;
+              if (val > maxAmount) maxAmount = val; // Usually the highest number is the total
+            }
+          }
+        }
+        textRecognizer.close();
+        
+        if (maxAmount > 0) {
+          setState(() {
+            _amountController.text = maxAmount.toStringAsFixed(2);
+            if (_noteController.text.isEmpty) {
+              _noteController.text = "Scanned Receipt";
+            }
+          });
+          ScaffoldMessenger.of(context).showSnackBar(_styledSnack("Amount detected: Rs.${maxAmount.toStringAsFixed(0)}"));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(_styledSnack("Could not detect total amount", isError: true));
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(_styledSnack("Error scanning receipt", isError: true));
+      }
+    }
+  }
+
   Widget _buildReceiptPicker() {
     return GestureDetector(
-      onTap: () async {
-        final picker = ImagePicker();
-        final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-        if (pickedFile != null) {
-          setState(() {
-            _receiptImagePath = pickedFile.path;
-          });
-        }
-      },
+      onTap: _scanReceipt,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
         decoration: BoxDecoration(
@@ -520,7 +609,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                _receiptImagePath == null ? "Attach Receipt Image" : "Receipt Attached",
+                _receiptImagePath == null ? "Scan Receipt (Auto-detect amount)" : "Receipt Attached",
                 style: TextStyle(
                   color: _receiptImagePath == null ? _subtleText : _accentColor,
                   fontWeight: FontWeight.w600,
@@ -572,6 +661,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
           return;
         }
         String finalNote = _noteController.text.trim();
+        if (_recurrence != 'none') {
+          finalNote += " [REC:$_recurrence]";
+        }
         if (_receiptImagePath != null) {
           finalNote += "\n[Receipt: $_receiptImagePath]";
         }

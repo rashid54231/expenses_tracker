@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/biometric_service.dart';
 import '../../auth/ui/login_screen.dart';
 import '../../dashboard/ui/home_wrapper.dart';
 import '../../onboarding/ui/onboarding_screen.dart';
@@ -14,6 +15,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool _showRetryButton = false;
+
   @override
   void initState() {
     super.initState();
@@ -39,11 +42,8 @@ class _SplashScreenState extends State<SplashScreen> {
       // Check auth state
       final session = Supabase.instance.client.auth.currentSession;
       if (session != null) {
-        // Logged in -> Dashboard
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeWrapper()),
-        );
+        // Logged in -> Prompt Biometrics
+        _promptBiometric();
       } else {
         // Not logged in -> Login Screen
         Navigator.pushReplacement(
@@ -51,6 +51,34 @@ class _SplashScreenState extends State<SplashScreen> {
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
+    }
+  }
+
+  Future<void> _promptBiometric() async {
+    final canCheck = await BiometricService.isBiometricAvailable();
+    if (canCheck) {
+      final authenticated = await BiometricService.authenticate();
+      if (authenticated) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeWrapper()),
+        );
+      } else {
+        // User cancelled or failed. Show a retry button on splash.
+        if (mounted) {
+          setState(() {
+            _showRetryButton = true;
+          });
+        }
+      }
+    } else {
+      // Biometrics not available, just proceed
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeWrapper()),
+      );
     }
   }
 
@@ -130,6 +158,21 @@ class _SplashScreenState extends State<SplashScreen> {
               )
                   .animate()
                   .fadeIn(delay: 800.ms, duration: 800.ms),
+              if (_showRetryButton)
+                Padding(
+                  padding: const EdgeInsets.only(top: 30),
+                  child: ElevatedButton.icon(
+                    onPressed: _promptBiometric,
+                    icon: const Icon(Icons.fingerprint),
+                    label: const Text("Unlock App"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0072FF),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ).animate().fadeIn(duration: 400.ms),
             ],
           ),
         ),
